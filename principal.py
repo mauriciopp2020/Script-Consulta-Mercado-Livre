@@ -8,6 +8,10 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from datetime import datetime
 import os
+import pytz  # Para ajustar o fuso horário
+
+# Configurar o fuso horário de Brasília
+fuso_horario_brasil = pytz.timezone('America/Sao_Paulo')
 
 # Configurar o Chrome para rodar no modo headless (sem abrir a interface gráfica)
 chrome_options = Options()
@@ -43,8 +47,9 @@ def capturar_dados(url):
     except:
         dados_produto["Preço"] = float('inf')  # Se não tiver preço, define um valor alto
     
-    # Adicionar a data e hora da pesquisa
-    dados_produto["Data e Hora"] = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+    # Adicionar a data e hora da pesquisa com o fuso horário de Brasília
+    data_hora_local = datetime.now(fuso_horario_brasil).strftime("%d/%m/%Y %H:%M:%S")
+    dados_produto["Data e Hora"] = data_hora_local
     
     return dados_produto
 
@@ -228,7 +233,5 @@ print(f"Dados salvos em {csv_output_filename}")
 
 driver.quit()
 
-# Perguntar ao usuário se deseja enviar o e-mail
-#enviar_email = input("Deseja enviar o relatório por e-mail? (s/n): ").strip().lower()
-#if enviar_email == 's':
+# Enviar o e-mail com os dados
 enviar_email_com_tabela(produtos_sorted)
