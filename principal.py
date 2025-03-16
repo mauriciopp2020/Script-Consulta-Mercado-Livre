@@ -8,6 +8,9 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from datetime import datetime
 import os
+import pytz 
+
+fuso_horario_brasil = pytz.timezone('America/Sao_Paulo')
 
 # Configurar o Chrome para rodar no modo headless (sem abrir a interface gráfica)
 chrome_options = Options()
@@ -44,7 +47,8 @@ def capturar_dados(url):
         dados_produto["Preço"] = float('inf')  # Se não tiver preço, define um valor alto
     
     # Adicionar a data e hora da pesquisa
-    dados_produto["Data e Hora"] = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+    data_hora_local = datetime.now(fuso_horario_brasil).strftime("%d/%m/%Y %H:%M:%S")
+    dados_produto["Data e Hora"] = data_hora_local
     
     return dados_produto
 
