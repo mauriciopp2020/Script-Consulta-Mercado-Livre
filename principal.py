@@ -151,7 +151,7 @@ with open(csv_input_filename, mode="r", newline="", encoding="utf-8") as input_f
 
     for row in reader:
         url = row[0]  
-        print(f"Consultando: {url}")
+        print(f"Consultando...")
         dados = capturar_dados(url)
         
         alteracao_preco = "Sem Alteração"
