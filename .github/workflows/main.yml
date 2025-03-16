@@ -1,40 +1,36 @@
-name: Executar Script de Automação
+name: Executar Automação Mercado Livre
 
 on:
-  workflow_dispatch:  # Permite executar manualmente pelo GitHub Actions
+  workflow_dispatch:
 
 jobs:
   run-script:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout do repositório
+      - name: Checkout do Repositório
         uses: actions/checkout@v3
+
+      - name: Instalar Google Chrome
+        run: |
+          sudo apt update
+          sudo apt install -y google-chrome-stable
+
+      - name: Instalar ChromeDriver
+        run: |
+          CHROME_VERSION=$(google-chrome --version | grep -oP '[0-9]+')
+          wget https://chromedriver.storage.googleapis.com/$(curl -s https://chromedriver.storage.googleapis.com/LATEST_RELEASE_$CHROME_VERSION)/chromedriver_linux64.zip
+          unzip chromedriver_linux64.zip
+          sudo mv chromedriver /usr/bin/chromedriver
+          sudo chmod +x /usr/bin/chromedriver
 
       - name: Configurar Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10'  # Versão do Python desejada
+          python-version: '3.10'
 
-      - name: Instalar dependências
-        run: |
-          pip install selenium pytz
+      - name: Instalar Dependências
+        run: pip install selenium pytz
 
-      - name: Baixar WebDriver
-        run: |
-          sudo apt update
-          sudo apt install -y chromium-chromedriver
-          echo "CHROMEDRIVER_PATH=$(which chromedriver)" >> $GITHUB_ENV
-
-      - name: Executar script
-        run: python principal.py  # Certifique-se de que o script.py está no repositório
-
-      - name: Confirmar e enviar arquivo CSV para o repositório
-        run: |
-          git config --global user.name "github-actions"
-          git config --global user.email "actions@github.com"
-          git add dados_produtos.csv
-          git commit -m "Atualização automática do CSV"
-          git push
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Token do GitHub para autenticação
+      - name: Executar Script
+        run: python principal.py
