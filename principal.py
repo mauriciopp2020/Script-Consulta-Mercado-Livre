@@ -10,56 +10,55 @@ from datetime import datetime
 import os
 import pytz 
 
+# Configurar fuso horário do Brasil
 fuso_horario_brasil = pytz.timezone('America/Sao_Paulo')
 
-# Configurar o Chrome para rodar no modo headless (sem abrir a interface gráfica)
+# Configurar ChromeOptions
 chrome_options = Options()
-chrome_options.add_argument("--headless")  # Ativa o modo headless
+chrome_options.binary_location = "/usr/bin/google-chrome"  # Caminho correto do Chrome
+chrome_options.add_argument("--headless")  
+chrome_options.add_argument("--no-sandbox")  
+chrome_options.add_argument("--disable-dev-shm-usage")
 
-# Inicializar o driver do Chrome com as opções configuradas
+# Inicializar WebDriver
 driver = webdriver.Chrome(options=chrome_options)
 
 # Configurações do e-mail
-EMAIL_REMETENTE = "automacaomrc@gmail.com"  # Seu e-mail
-SENHA = "cqle nafe dnmj mwll"  # Senha do e-mail ou app password (recomendado para Gmail)
-EMAIL_DESTINATARIO = "mp243822@gmail.com"  # E-mail para receber o CSV
+EMAIL_REMETENTE = "automacaomrc@gmail.com"  
+SENHA = "cqle nafe dnmj mwll"  
+EMAIL_DESTINATARIO = "mp243822@gmail.com"  
 
 # Função para capturar os dados de uma URL
 def capturar_dados(url):
     driver.get(url)
-    time.sleep(5)  # Aguarde o carregamento da página
+    time.sleep(5)  
 
-    # Capturar os dados
-    dados_produto = {"Link": url}  # Adiciona o link do produto
+    dados_produto = {"Link": url}  
     
     try:
-        # Título do produto
         titulo_elemento = driver.find_element(By.CSS_SELECTOR, "h1.ui-pdp-title")
         dados_produto["Título"] = titulo_elemento.text.strip()
     except:
         dados_produto["Título"] = "N/A"
 
     try:
-        # Preço com desconto
         preco_meta_elemento = driver.find_element(By.CSS_SELECTOR, 'meta[itemprop="price"]')
         dados_produto["Preço"] = float(preco_meta_elemento.get_attribute("content").replace(',', '.'))
     except:
-        dados_produto["Preço"] = float('inf')  # Se não tiver preço, define um valor alto
+        dados_produto["Preço"] = float('inf')  
     
-    # Adicionar a data e hora da pesquisa
     data_hora_local = datetime.now(fuso_horario_brasil).strftime("%d/%m/%Y %H:%M:%S")
     dados_produto["Data e Hora"] = data_hora_local
     
     return dados_produto
 
-# Função para ler os preços antigos de um arquivo CSV
+# Função para ler os preços antigos do CSV
 def ler_precos_anteriores(arquivo):
     precos_anteriores = {}
     if os.path.exists(arquivo):
         with open(arquivo, mode="r", newline="", encoding="utf-8") as file:
             reader = csv.DictReader(file)
             for row in reader:
-                # Armazenar os preços antigos usando o título como chave
                 precos_anteriores[row["Título"]] = float(row["Preço"])
     return precos_anteriores
 
@@ -67,92 +66,46 @@ def ler_precos_anteriores(arquivo):
 def salvar_dados(produtos, arquivo):
     file_exists = os.path.exists(arquivo)
 
-    with open(arquivo, mode="a", newline="", encoding="utf-8") as output_file:
+    with open(arquivo, mode="w", newline="", encoding="utf-8") as output_file:  # Modo "w" sobrescreve o arquivo corretamente
         writer = csv.writer(output_file)
 
-        # Se o arquivo não existir, escreve o cabeçalho
         if not file_exists:
             writer.writerow(["Título", "Preço", "Alteração de Preço", "Data e Hora", "Link do Produto"])
 
-        # Adicionar duas linhas vazias após cada consulta de produto (não entre as colunas)
         for produto in produtos:
-            # Escrever os dados no CSV
             writer.writerow([produto["Título"], produto["Preço"], produto["Alteração de Preço"], produto["Data e Hora"], produto["Link"]])
-        output_file.write("\n\n")
 
-# Função para enviar o e-mail com o CSV anexado e em formato de tabela HTML no corpo com responsividade e negrito
-def enviar_email_com_tabela(produtos,arquivo_csv):
+# Função para enviar o e-mail com os dados
+def enviar_email_com_tabela(produtos, arquivo_csv):
     msg = EmailMessage()
-    msg["Subject"] = "Relatório de Preços - Produtos Mercado Livre"
+    msg["Subject"] = "Relatório de Preços - Mercado Livre"
     msg["From"] = EMAIL_REMETENTE
     msg["To"] = EMAIL_DESTINATARIO
-    msg.set_content("Segue abaixo o relatório de preços atualizado.")
+    msg.set_content("Segue o relatório atualizado.")
 
-    # Criando a tabela HTML com CSS responsivo e negrito nas linhas
     html_content = """
     <html>
     <head>
         <style>
-            /* Estilo para a tabela */
-            table {
-                width: 100%;
-                border-collapse: collapse;
-                margin: 20px 0;
-            }
-            th, td {
-                padding: 8px;
-                text-align: left;
-                border: 1px solid #ddd;
-            }
-            th {
-                background-color: #f2f2f2;
-                font-weight: bold;
-            }
-            td {
-                font-weight: bold; /* Adiciona negrito nas células */
-            }
-            /* Estilo para o link */
-            a {
-                text-decoration: none;
-                color: #0066cc;
-            }
-            /* Responsividade */
-            @media screen and (max-width: 600px) {
-                table {
-                    width: 100%;
-                    display: block;
-                    overflow-x: auto;
-                }
-                th, td {
-                    display: block;
-                    width: 100%;
-                }
-                td {
-                    text-align: right;
-                    padding-left: 50%;
-                    position: relative;
-                }
-                td::before {
-                    content: attr(data-label);
-                    position: absolute;
-                    left: 10px;
-                    font-weight: bold;
-                }
-            }
+            table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+            th, td { padding: 8px; text-align: left; border: 1px solid #ddd; }
+            th { background-color: #f2f2f2; font-weight: bold; }
+            td { font-weight: bold; }
+            a { text-decoration: none; color: #0066cc; }
         </style>
     </head>
     <body>
-        <h3>Relatório de Preços - Produtos</h3>
+        <h3>Relatório de Preços</h3>
         <table>
             <tr>
                 <th>Título</th>
                 <th>Preço</th>
-                <th>Alteração de Preço</th>
-                <th>Data e Hora</th>
-                <th>Link do Produto</th>
+                <th>Alteração</th>
+                <th>Data</th>
+                <th>Link</th>
             </tr>
     """
-    
+
     for produto in produtos:
         html_content += f"""
             <tr>
@@ -160,7 +113,7 @@ def enviar_email_com_tabela(produtos,arquivo_csv):
                 <td>{produto["Preço"]}</td>
                 <td>{produto["Alteração de Preço"]}</td>
                 <td>{produto["Data e Hora"]}</td>
-                <td><a href="{produto["Link"]}">Link</a></td>
+                <td><a href="{produto["Link"]}">Ver</a></td>
             </tr>
         """
     
@@ -172,39 +125,35 @@ def enviar_email_com_tabela(produtos,arquivo_csv):
     
     msg.add_alternative(html_content, subtype="html")
 
-
-    # Anexar o arquivo CSV
     with open(arquivo_csv, "rb") as f:
         msg.add_attachment(f.read(), maintype="application", subtype="csv", filename=arquivo_csv)
 
-    # Enviar o e-mail via SMTP
     context = ssl.create_default_context()
     with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context) as server:
         server.login(EMAIL_REMETENTE, SENHA)
         server.send_message(msg)
 
-    print("E-mail com tabela responsiva e negrito enviado com sucesso!")
+    print("E-mail enviado com sucesso!")
 
-# Ler URLs do arquivo CSV
-csv_input_filename = "urls_produtos.csv"  # Nome do arquivo CSV contendo as URLs
-csv_output_filename = "dados_produtos.csv"  # Nome do arquivo CSV para salvar os dados
+# Arquivos CSV
+csv_input_filename = "urls_produtos.csv"
+csv_output_filename = "dados_produtos.csv"
 
 # Ler os preços antigos
 precos_anteriores = ler_precos_anteriores(csv_output_filename)
 
 produtos = []
 
+# Ler URLs do arquivo CSV
 with open(csv_input_filename, mode="r", newline="", encoding="utf-8") as input_file:
     reader = csv.reader(input_file)
-    next(reader)  # Pular o cabeçalho, se houver
+    next(reader)
 
-    # Iterar sobre as URLs e coletar os dados
     for row in reader:
-        url = row[0]  # Assumindo que a URL está na primeira coluna
-        print(f"Consultando...")
+        url = row[0]  
+        print(f"Consultando: {url}")
         dados = capturar_dados(url)
         
-        # Verificar se houve aumento ou diminuição no preço
         alteracao_preco = "Sem Alteração"
         if dados["Título"] in precos_anteriores:
             diferenca = dados["Preço"] - precos_anteriores[dados["Título"]]
@@ -216,13 +165,12 @@ with open(csv_input_filename, mode="r", newline="", encoding="utf-8") as input_f
         dados["Alteração de Preço"] = alteracao_preco
         produtos.append(dados)
 
-# Ordenar os produtos por preço (do menor para o maior)
+# Ordenar produtos e salvar
 produtos_sorted = sorted(produtos, key=lambda x: x["Preço"])
-
 salvar_dados(produtos_sorted, csv_output_filename)
 print(f"Dados salvos em {csv_output_filename}")
 
 driver.quit()
 
-# Enviar o e-mail com a tabela HTML no corpo e o arquivo CSV em anexo
+# Enviar e-mail
 enviar_email_com_tabela(produtos_sorted, csv_output_filename)
