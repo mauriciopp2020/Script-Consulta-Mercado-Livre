@@ -1,4 +1,4 @@
-import time 
+import time
 import csv
 import smtplib
 import ssl
@@ -8,10 +8,6 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from datetime import datetime
 import os
-import pytz  # Para ajustar o fuso horário
-
-# Configurar o fuso horário de Brasília
-fuso_horario_brasil = pytz.timezone('America/Sao_Paulo')
 
 # Configurar o Chrome para rodar no modo headless (sem abrir a interface gráfica)
 chrome_options = Options()
@@ -47,9 +43,8 @@ def capturar_dados(url):
     except:
         dados_produto["Preço"] = float('inf')  # Se não tiver preço, define um valor alto
     
-    # Adicionar a data e hora da pesquisa com o fuso horário de Brasília
-    data_hora_local = datetime.now(fuso_horario_brasil).strftime("%d/%m/%Y %H:%M:%S")
-    dados_produto["Data e Hora"] = data_hora_local
+    # Adicionar a data e hora da pesquisa
+    dados_produto["Data e Hora"] = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
     
     return dados_produto
 
@@ -82,9 +77,9 @@ def salvar_dados(produtos, arquivo):
         output_file.write("\n\n")
 
 # Função para enviar o e-mail com o CSV anexado e em formato de tabela HTML no corpo com responsividade e negrito
-def enviar_email_com_tabela(produtos):
+def enviar_email_com_tabela(produtos,arquivo_csv):
     msg = EmailMessage()
-    msg["Subject"] = "Relatório de Preços - E-commerce Mercado Livre"
+    msg["Subject"] = "Relatório de Preços - Produtos Mercado Livre"
     msg["From"] = EMAIL_REMETENTE
     msg["To"] = EMAIL_DESTINATARIO
     msg.set_content("Segue abaixo o relatório de preços atualizado.")
@@ -143,7 +138,7 @@ def enviar_email_com_tabela(produtos):
         </style>
     </head>
     <body>
-        <h3>Tabela de Preço dos produtos do E-commerce Mercado Livre</h3>
+        <h3>Relatório de Preços - Produtos</h3>
         <table>
             <tr>
                 <th>Título</th>
@@ -174,13 +169,17 @@ def enviar_email_com_tabela(produtos):
     msg.add_alternative(html_content, subtype="html")
 
 
+    # Anexar o arquivo CSV
+    with open(arquivo_csv, "rb") as f:
+        msg.add_attachment(f.read(), maintype="application", subtype="csv", filename=arquivo_csv)
+
     # Enviar o e-mail via SMTP
     context = ssl.create_default_context()
     with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context) as server:
         server.login(EMAIL_REMETENTE, SENHA)
         server.send_message(msg)
 
-    print("E-mail enviado com sucesso!")
+    print("E-mail com tabela responsiva e negrito enviado com sucesso!")
 
 # Ler URLs do arquivo CSV
 csv_input_filename = "urls_produtos.csv"  # Nome do arquivo CSV contendo as URLs
@@ -203,27 +202,15 @@ with open(csv_input_filename, mode="r", newline="", encoding="utf-8") as input_f
         
         # Verificar se houve aumento ou diminuição no preço
         alteracao_preco = "Sem Alteração"
-        cor = "black"
         if dados["Título"] in precos_anteriores:
             diferenca = dados["Preço"] - precos_anteriores[dados["Título"]]
             if diferenca > 0:
                 alteracao_preco = f"Aumento de R${diferenca:.2f}"
-                cor = "red"
             elif diferenca < 0:
                 alteracao_preco = f"Diminuição de R${-diferenca:.2f}"
-                cor = "green"
-        
-       
-        # Para o e-mail, inclui a formatação HTML para a cor
-        produto_html = {
-            "Título": dados["Título"],
-            "Preço": dados["Preço"],
-            "Alteração de Preço": f'<span style="color:{cor}; font-weight:bold;">{alteracao_preco}</span>',
-            "Data e Hora": dados["Data e Hora"],
-            "Link": dados["Link"]
-        }
+
         dados["Alteração de Preço"] = alteracao_preco
-        produtos.append(produto_html)
+        produtos.append(dados)
 
 # Ordenar os produtos por preço (do menor para o maior)
 produtos_sorted = sorted(produtos, key=lambda x: x["Preço"])
@@ -233,5 +220,5 @@ print(f"Dados salvos em {csv_output_filename}")
 
 driver.quit()
 
-# Enviar o e-mail com os dados
-enviar_email_com_tabela(produtos_sorted)
+# Enviar o e-mail com a tabela HTML no corpo e o arquivo CSV em anexo
+enviar_email_com_tabela(produtos_sorted, csv_output_filename)
