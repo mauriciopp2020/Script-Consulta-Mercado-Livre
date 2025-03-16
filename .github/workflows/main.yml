@@ -1,24 +1,37 @@
-name: Executar Automação Mercado Livre
+name: Coletar Preços e Enviar E-mail
 
 on:
-  workflow_dispatch:
+  schedule:
+    - cron: "0 * * * *"  # Executa a cada hora
+  workflow_dispatch:  # Permite rodar manualmente
 
 jobs:
-  run-script:
+  scrape:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout do Repositório
-        uses: actions/checkout@v3
+    - name: 📥 Checkout do repositório
+      uses: actions/checkout@v3
 
+    - name: 🐍 Configurar Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.10"
 
-      - name: Configurar Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
+    - name: 📦 Instalar dependências
+      run: |
+        pip install selenium pytz
+        sudo apt update
+        sudo apt install -y google-chrome-stable
 
-      - name: Instalar Dependências
-        run: pip install selenium pytz
+    - name: 🏎️ Executar script de coleta
+      env:
+        EMAIL_REMETENTE: ${{ secrets.EMAIL_REMETENTE }}
+        EMAIL_SENHA: ${{ secrets.EMAIL_SENHA }}
+      run: python seu_script.py
 
-      - name: Executar Script
-        run: python principal.py
+    - name: 📤 Upload CSV como artefato
+      uses: actions/upload-artifact@v3
+      with:
+        name: relatorio-precos
+        path: /tmp/dados_produtos.csv
