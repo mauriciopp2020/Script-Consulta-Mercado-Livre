@@ -213,7 +213,6 @@ with open(csv_input_filename, mode="r", newline="", encoding="utf-8") as input_f
         produto_html = {
             "Título": dados["Título"],
             "Preço": dados["Preço"],
-            "Alteração de Preço": f'<span style="color:{cor}; font-weight:bold;">{alteracao_preco}</span>',
             "Data e Hora": dados["Data e Hora"],
             "Link": dados["Link"]
         }
@@ -229,6 +228,6 @@ print(f"📂 Dados salvos em {csv_output_filename}")
 driver.quit()
 
 # Perguntar ao usuário se deseja enviar o e-mail
-enviar_email = input("📧 Deseja enviar o relatório por e-mail? (s/n): ").strip().lower()
-if enviar_email == 's':
-   enviar_email_com_tabela(produtos_sorted)
+#enviar_email = input("📧 Deseja enviar o relatório por e-mail? (s/n): ").strip().lower()
+#if enviar_email == 's':
+enviar_email_com_tabela(produtos_sorted)
