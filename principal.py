@@ -229,6 +229,6 @@ print(f"📂 Dados salvos em {csv_output_filename}")
 driver.quit()
 
 # Perguntar ao usuário se deseja enviar o e-mail
-enviar_email = input("📧 Deseja enviar o relatório por e-mail? (s/n): ").strip().lower()
-if enviar_email == 's':
-   enviar_email_com_tabela(produtos_sorted)
+#enviar_email = input("📧 Deseja enviar o relatório por e-mail? (s/n): ").strip().lower()
+#if enviar_email == 's':
+enviar_email_com_tabela(produtos_sorted)
