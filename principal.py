@@ -76,3 +76,4 @@ salvar_dados(produtos, csv_output_filename)
 print(f"📂 Dados salvos em {csv_output_filename}")
 
 driver.quit()
+enviar_email_com_tabela(produtos_sorted)
