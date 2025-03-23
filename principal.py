@@ -43,8 +43,6 @@ def capturar_dados(url):
     except:
         dados_produto["Preço"] = float('inf')  # Se não tiver preço, define um valor alto
     
-    # Adicionar a data e hora da pesquisa
-    dados_produto["Data e Hora"] = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
     
     return dados_produto
 
@@ -68,12 +66,12 @@ def salvar_dados(produtos, arquivo):
 
         # Se o arquivo não existir, escreve o cabeçalho
         if not file_exists:
-            writer.writerow(["Título", "Preço","Data e Hora", "Link do Produto"])
+            writer.writerow(["Título", "Preço","Link do Produto"])
 
         # Adicionar duas linhas vazias após cada consulta de produto (não entre as colunas)
         for produto in produtos:
             # Escrever os dados no CSV
-            writer.writerow([produto["Título"], produto["Preço"], produto["Data e Hora"], produto["Link"]])
+            writer.writerow([produto["Título"], produto["Preço"],produto["Link"]])
         output_file.write("\n\n")
 
 # Função para enviar o e-mail com o CSV anexado e em formato de tabela HTML no corpo com responsividade e negrito
@@ -143,7 +141,6 @@ def enviar_email_com_tabela(produtos):
             <tr>
                 <th>Título</th>
                 <th>Preço</th>
-                <th>Data e Hora</th>
                 <th>Link do Produto</th>
             </tr>
     """
@@ -153,7 +150,6 @@ def enviar_email_com_tabela(produtos):
             <tr>
                 <td>{produto["Título"]}</td>
                 <td>{produto["Preço"]}</td>
-                <td>{produto["Data e Hora"]}</td>
                 <td><a href="{produto["Link"]}">Link</a></td>
             </tr>
         """
@@ -198,7 +194,6 @@ with open(csv_input_filename, mode="r", newline="", encoding="utf-8") as input_f
         produto_html = {
             "Título": dados["Título"],
             "Preço": dados["Preço"],
-            "Data e Hora": dados["Data e Hora"],
             "Link": dados["Link"]
         }
 
