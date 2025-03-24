@@ -1,26 +1,26 @@
 name: Executar Automação Mercado Livre
 
 on:
-  schedule:
-    - cron: "*/5 * * * *"
-  issues:
-    types: [opened]
+schedule:
+- cron: "*/5 * * * *"
+issues:
+types: [opened]
 
 jobs:
-  run-script:
-    runs-on: ubuntu-latest
+run-script:
+runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout do Repositório
-        uses: actions/checkout@v3
+steps:  
+  - name: Checkout do Repositório  
+    uses: actions/checkout@v3  
 
-      - name: Configurar Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
+  - name: Configurar Python  
+    uses: actions/setup-python@v4  
+    with:  
+      python-version: '3.10'  
 
-      - name: Instalar Dependências
-        run: pip install selenium pytz
+  - name: Instalar Dependências  
+    run: pip install selenium pytz  
 
-      - name: Executar Script
-        run: python principal.py
+  - name: Executar Script  
+    run: python principal.py
