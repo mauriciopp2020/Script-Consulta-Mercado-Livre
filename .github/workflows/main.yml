@@ -5,7 +5,7 @@ on:
     - cron: "*/5 * * * *"
   issues:
     types: [opened]
-  workflow_dispatch:
+  #workflow_dispatch:
 
 jobs:
   run-script:
